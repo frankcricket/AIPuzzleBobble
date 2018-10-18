@@ -1,9 +1,28 @@
-inGrid(X,Y) | outGrid(X,Y) :- position(X,Y,_).
+%GENERO LO SPAZIO DI RICERCA
 
-:- not #count{X,Y: inGrid(X,Y)} = 1.
+odd(1).odd(3).odd(5).odd(7).odd(9).odd(11).
+even(0).even(2).even(4).even(6).even(8).even(10).even(12).
 
-%inGrid(X,Y) :- position(X,Y,_),sphere(X,Z,Col),currentsphere(_,_,Col),Z=Y-1.
-%inGrid(X,Y) :- position(X,Y,_),sphere(W,Z,Col),currentsphere(_,_,Col),Z=Y-1, W=X+1.
 
-%:~ inGrid(X,Y). [1:10]
-%:~ outGrid(X,Y). [1:Y]
+%Adiacenze con Y dispari
+neighbors(X,Y,Col) :- position(X,Y,_),odd(Y), sphere(Z,W,Col), Z=X, W=Y-1.   %top right
+neighbors(X,Y,Col) :- position(X,Y,_),odd(Y), sphere(Z,W,Col), Z=X-1, W=Y-1. %top left
+neighbors(X,Y,Col) :- position(X,Y,_),odd(Y), sphere(Z,W,Col), Z=X-1, W=Y.   %left
+neighbors(X,Y,Col) :- position(X,Y,_),odd(Y), sphere(Z,W,Col), Z=X+1, W=Y.   %right
+
+%Adiacenze con Y pari
+neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X+1, W=Y-1.   %top right
+neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X, W=Y-1. %top left
+neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X-1, W=Y.   %left
+neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X+1, W=Y.   %right
+
+%Spazio di ricerca
+inGrid(X,Y,Col) | outGrid(X,Y,Col) :- neighbors(X,Y,Col).
+
+inGrid(X,Y,Col) :- neighbors(X,Y,Col), currentsphere(Col).
+
+:- #count{X,Y: inGrid(X,Y,_)} = 0.
+
+:~ inGrid(X,Y,Col), not currentsphere(Col),Z = Y+1. [1:Z]
+
+

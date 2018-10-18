@@ -6,35 +6,41 @@ import it.unical.mat.embasp.languages.Param;
 @Id("currentsphere")
 public class DLVSphere{
 	
+//	@Param(0)
+//	float x;
+//	@Param(1)
+//	float y;
 	@Param(0)
-	float x;
-	@Param(1)
-	float y;
-	@Param(2)
 	int color;
 	
 	
 	public DLVSphere() {
 	}
 	
-	public DLVSphere(float x, float y, int color) {
-		this.x = x;
-		this.y = y;
+//	public DLVSphere(float x, float y, int color) {
+////		this.x = x;
+////		this.y = y;
+//		this.color = color;
+//	}
+	
+	public DLVSphere(int color) {
+//		this.x = x;
+//		this.y = y;
 		this.color = color;
 	}
 	
-	public float getX() {
-		return x;
-	}
-	public void setX(float x) {
-		this.x = x;
-	}
-	public float getY() {
-		return y;
-	}
-	public void setY(float y) {
-		this.y = y;
-	}
+//	public float getX() {
+//		return x;
+//	}
+//	public void setX(float x) {
+//		this.x = x;
+//	}
+//	public float getY() {
+//		return y;
+//	}
+//	public void setY(float y) {
+//		this.y = y;
+//	}
 	public int getColor() {
 		return color;
 	}

@@ -22,13 +22,14 @@ import it.mat.unical.puzzlebobble.entities.Smoke;
 import it.mat.unical.puzzlebobble.entities.Sphere;
 import it.mat.unical.puzzlebobble.entities.Sphere.Colors;
 import it.mat.unical.puzzlebobble.helpers.InputHelper;
+import it.mat.unical.puzzlebobble.helpers.SettingsHelper;
 import it.mat.unical.puzzlebobble.logic.Simulator;
 
 public class StagePlay implements Stage {
 	
 	public static StagePlay stagePlay = null;
 	
-	public static int LEFT_BORDER = 35;
+	public static int LEFT_BORDER = 37;
 	public static int RIGHT_BORDER = 440;
 	public static int TOP_BORDER = 615;
 	public static int BOTTOM_BORDER = 35;
@@ -67,7 +68,6 @@ public class StagePlay implements Stage {
 	private Sound boo;
 	private float counter = 0.0f;
 	
-	private static float CANNON_POS;
 	
 	@Override
 	public void load() {
@@ -111,7 +111,7 @@ public class StagePlay implements Stage {
 	}
 
 	/*
-	 * Tempo dell'animazione iniziale
+	 * TODO tempo di attesa
 	 */
 	private void beginning(float delta) {
 		this.counter += delta / 1000;
@@ -123,9 +123,10 @@ public class StagePlay implements Stage {
 	}
 	
 	private void playing(float delta) {
+		System.out.println("playing");
 		
 		if (this.currentSphere.state() == Sphere.State.Stopped) {
-			state = State.Waiting;
+			System.out.println("-------------------STOPPED-------------------------");
 			boolean brokeFlag = false;
 			this.currentSphere.fixPosition(false);
 			List<Sphere> similars = this.currentSphere.findSimilars(this.spheres);
@@ -135,6 +136,7 @@ public class StagePlay implements Stage {
 				InputHelper.play(Sphere.destroySound);
 				this.score.addPoints(similars.size() * POINTS_PER_SPHERE);
 				this.smokeOnDestroyedSpheres(similars);
+				
 				this.spheres.removeAll(similars);
 				// Delete floating ones
 				List<Sphere> floatingSpheres = new ArrayList<Sphere>();
@@ -151,6 +153,7 @@ public class StagePlay implements Stage {
 					this.score.addPoints((int) Math.pow(2, floatingSpheres.size() - 1) * 10);
 				}
 			}
+			/*Controllo "hai vinto"*/
 			if (this.spheres.size() == 0) {
 				this.currentSphere = null;
 				this.nextSphere = null;
@@ -158,6 +161,7 @@ public class StagePlay implements Stage {
 				this.state = State.Won;
 				return;
 			}
+			/*Controllo "hai perso"*/
 			if (brokeFlag == false) {
 				if (this.currentSphere.gridPosition().y <= MAX_SPHERES) {
 					InputHelper.play(this.boo);
@@ -166,83 +170,18 @@ public class StagePlay implements Stage {
 				}
 			}
 			this.nextSphere();
+			
+			state = State.Waiting;
+			return;
 		}
-		if(cannon.update(delta)) {
-			cannon.shoot(currentSphere);
+		if(currentSphere.state() == Sphere.State.Ready)	{
+			System.out.println("READY");
+			if(!cannon.update(10)) {
+				cannon.shoot(currentSphere);
+			}
 		}
 		currentSphere.update(spheres, delta);
 	}
-	
-	
-
-//	private void playing(float delta) {
-//		if (this.currentSphere.state() == Sphere.State.Stopped) {
-//			boolean brokeFlag = false;
-//			this.currentSphere.fixPosition(false);
-//			List<Sphere> similars = this.currentSphere.findSimilars(this.spheres);
-//			this.spheres.add(this.currentSphere);
-//			if (similars.size() > 2) {
-//				brokeFlag = true;
-//				InputHelper.play(Sphere.destroySound);
-//				this.score.addPoints(similars.size() * POINTS_PER_SPHERE);
-//				this.smokeOnDestroyedSpheres(similars);
-//				this.spheres.removeAll(similars);
-//				// Delete floating ones
-//				List<Sphere> floatingSpheres = new ArrayList<Sphere>();
-//				Iterator<Sphere> it = this.spheres.iterator();
-//				while (it.hasNext()) {
-//					Sphere sphere = it.next();
-//					if (sphere.floating(spheres)) {
-//						floatingSpheres.add(sphere);
-//					}
-//				}
-//				if (floatingSpheres.size() > 0) {
-//					this.smokeOnDestroyedSpheres(floatingSpheres);
-//					this.spheres.removeAll(floatingSpheres);
-//					this.score.addPoints((int) Math.pow(2, floatingSpheres.size() - 1) * 10);
-//				}
-//			}
-//			if (this.spheres.size() == 0) {
-//				this.currentSphere = null;
-//				this.nextSphere = null;
-//				this.score.addPoints(this.score.secondsLeft() * 1000);
-//				this.state = State.Won;
-//				return;
-//			}
-//			if (brokeFlag == false) {
-//				if (this.currentSphere.gridPosition().y <= MAX_SPHERES) {
-//					InputHelper.play(this.boo);
-//					this.state = State.Lost;
-//					return;
-//				}
-//			}
-//			this.nextSphere();
-//		}
-//
-//		if (InputHelper.isCatched()) {
-//			if (InputHelper.touch.y > 170) {
-//				this.cannon.target(InputHelper.touch.x, InputHelper.touch.y);
-//			}
-//		}
-//		if (InputHelper.justTouched()) {
-//				this.cannon.shoot(this.currentSphere);
-//		} 
-//		this.cannon.update(delta);
-//		this.currentSphere.update(spheres, delta);
-//		this.score.updateTime(delta);
-//	}
-	
-	
-//	private void updateCannonTaget(float delta) {
-//		this.cannon.target(xcannon, ycannon);
-//		xcannon += (delta + SettingsHelper.CANNON_X_SPEED);
-//	}
-//	
-//	private void resetCannon() {
-//		xcannon = SettingsHelper.START_X_CANNON_SIMULATION;
-//		ycannon = SettingsHelper.START_Y_CANNON_SIMULATION;
-//		this.cannon.target(xcannon, ycannon);
-//	}
 
 	@Override
 	public void logic(float delta) {
@@ -259,16 +198,13 @@ public class StagePlay implements Stage {
 		
 		switch(this.state) {
 		case Beginning:{
-			beginning(delta);
+			
 			break;			
 		}
 		case Prestart:{
 			if(InputHelper.readyToPlay()) {
-				this.state = State.Playing;
-//				Simulator sm = new Simulator(round);
-				Simulator sm = new Simulator(spheres,currentSphere);
-				CANNON_POS = sm.findStartingPositions();
-				cannon.target(CANNON_POS, 175);
+				new Simulator(spheres,currentSphere).start();
+				state = State.Beginning;
 			}
 			break;
 		}
@@ -285,11 +221,8 @@ public class StagePlay implements Stage {
 			break;
 		}
 		case Waiting:{
-			this.state = State.Playing;
-//			Simulator sm = new Simulator(round);
-			Simulator sm = new Simulator(spheres,currentSphere);
-			CANNON_POS = sm.findStartingPositions();
-			cannon.target(CANNON_POS, 175);
+			new Simulator(spheres,currentSphere).start();
+			state = State.Beginning;
 			break;
 		}
 		default:
@@ -426,5 +359,13 @@ public class StagePlay implements Stage {
 	}
 	public List<Sphere> getSpheres() {
 		return spheres;
+	}
+	
+	public void setPlayingSate() {
+		this.state = State.Playing;
+	}
+	
+	public void setCannonTarget(float target) {
+		cannon.target(target, SettingsHelper.START_Y_CANNON_SIMULATION);
 	}
 }

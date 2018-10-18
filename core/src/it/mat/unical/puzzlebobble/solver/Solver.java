@@ -20,33 +20,47 @@ import it.unical.mat.embasp.specializations.dlv.desktop.DLVDesktopService;
 public class Solver {
 
 	private static String encodingResource = "encodings/puzzlebobble";
-	private static Handler handler = null;
-	private static InputProgram facts = null;
 
-	public static Vector2 solve(List<Sphere> spheres, HashMap<Vector2, Float> positions, Sphere currentSphere) {
+	public static Vector2 solve(final List<Sphere> spheres,final HashMap<Vector2, Float> positions,final Sphere currentSphere) {
 		
-		System.out.println("Dim: " + spheres.size() + " // " + positions.size());
+//		for(final Iterator<Map.Entry<Vector2, Float>> it = positions.entrySet().iterator(); it.hasNext(); ) {
+//			int x,y;
+//			Map.Entry<Vector2, Float> entry = it.next();
+//		    x = (int) entry.getKey().x;
+//		    y = ((int) entry.getKey().y) * - 1; //asse y cambiata di segno perchè negativa
+//			System.out.println("position("+x+","+y+","+entry.getValue()+").");
+//		}
+//		System.out.println("Current spheres...");
 		
-		handler = new DesktopHandler(new DLVDesktopService("lib/dlv.mingw.exe"));
-		facts = new ASPInputProgram();
+//		for (final Sphere s : spheres) {
+//			int x,y,col;
+//			x = (int) s.gridPosition().x;
+//			y = ((int) s.gridPosition().y) * - 1; //asse y cambiata di segno perchè negativa
+//			col = s.getColorId();
+//			System.out.println("sphere("+x+","+y+","+col+").");
+//		}
+		
+		Handler handler = new DesktopHandler(new DLVDesktopService("lib/dlv.mingw.exe"));
+		InputProgram facts = new ASPInputProgram();	
 		
 		try {
 			int x,y,col;
-			for (Sphere s : spheres) {
+			for (final Sphere s : spheres) {
 				x = (int) s.gridPosition().x;
 				y = ((int) s.gridPosition().y) * - 1; //asse y cambiata di segno perchè negativa
 				col = s.getColorId();
 				facts.addObjectInput(new SphereConfig(x, y, col));
 			}
 		
-			for(Iterator<Map.Entry<Vector2, Float>> it = positions.entrySet().iterator(); it.hasNext(); ) {
+			for(final Iterator<Map.Entry<Vector2, Float>> it = positions.entrySet().iterator(); it.hasNext(); ) {
 			      Map.Entry<Vector2, Float> entry = it.next();
 			      x = (int) entry.getKey().x;
 			      y = ((int) entry.getKey().y) * - 1; //asse y cambiata di segno perchè negativa
 			      facts.addObjectInput(new PositionConfig(x,y,entry.getValue()));
 			}
 			
-			facts.addObjectInput(new DLVSphere(currentSphere.gridPosition.x, currentSphere.gridPosition.y, currentSphere.getColorId()));
+//			facts.addObjectInput(new DLVSphere(currentSphere.gridPosition.x, currentSphere.gridPosition.y, currentSphere.getColorId()));
+			facts.addObjectInput(new DLVSphere(currentSphere.getColorId()));
 		} catch (Exception e) {
 			System.err.println("Error adding facts");
 			return null;
@@ -59,12 +73,12 @@ public class Solver {
 		Output o = handler.startSync();
 		AnswerSets answers = (AnswerSets) o;
 
-		System.out.println("Size: " + answers.getAnswersets().size());
-		for (AnswerSet a : answers.getAnswersets()) {
-//			System.out.println(a);
+//		System.out.println("AnswerSets size: " + answers.getAnswersets().size()+"\nStampo i fatti..\n");
+//		System.out.println("---------------------------------------------------------------------");
+		for (final AnswerSet a : answers.getAnswersets()) {
 			try {
-				for (String obj : a.getAnswerSet()) {
-					System.out.println(obj);
+				for (final String obj : a.getAnswerSet()) {
+//					System.out.println(obj);
 					if(obj.startsWith("inGrid")) {
 						return parseRow(obj);
 					}
@@ -79,26 +93,15 @@ public class Solver {
 		
 	}
 	
-	private static Vector2 parseRow(final String s) {
+	private final static Vector2 parseRow(final String s) {
+//		System.out.println(s);
 		 //inGrid(x,y)
 		String[] values = (s.substring(7, 10)).split(",");
 		int x = Integer.parseInt(values[0]);
 		int y = (Integer.parseInt(values[1])) * -1;
 		
-//		System.out.println(x +" // " + y);
 		return new Vector2(x, y);
 		
 	}
 	
-	public static Handler getHandler(boolean action) {
-		if (handler == null || action) {
-			handler = new DesktopHandler(new DLVDesktopService("lib/dlv.mingw.exe"));
-		}
-		return handler;
-	}
-	
-	public static void main(String[] args) {
-		Solver.solve(null, null, null);
-	}
-
 }

@@ -7,47 +7,28 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 import it.mat.unical.puzzlebobble.Game;
-import it.mat.unical.puzzlebobble.RoundLoader;
 import it.mat.unical.puzzlebobble.entities.Cannon;
 import it.mat.unical.puzzlebobble.entities.Sphere;
-import it.mat.unical.puzzlebobble.entities.Sphere.Colors;
 import it.mat.unical.puzzlebobble.helpers.SettingsHelper;
 import it.mat.unical.puzzlebobble.solver.Solver;
+import it.mat.unical.puzzlebobble.stages.StagePlay;
 
-public class Simulator {
+public class Simulator extends Thread{
 	
-	//configurazione di base
 	private Cannon cannon;
 	private float xcannon, ycannon;
 	private Sphere currSphere;
-	private Sphere nextSphere;	
 	private List<Sphere> spheres;
-	private RoundLoader loader;
-	
-	private HashMap<Vector2, Float> positions;
-	LinkedList<Vector2> uniquePos; 
 	
 	private final static float DELTA = 5f;
-	
-//	public Simulator(int round) {
-//		cannon = null;
-//		currSphere = null;
-//		nextSphere = null;
-//		spheres = null;
-//		
-//		initObjs(round);
-//	}
 	
 	public Simulator(final List<Sphere> game_spheres,final Sphere curr_sphere) {
 		cannon = null;
 		currSphere = null;
 		spheres = null;
-		positions = null;
-		uniquePos = null;
 		initObjs(game_spheres,curr_sphere);
 	}
 	
@@ -55,9 +36,6 @@ public class Simulator {
 		
 		initCannon();
 		spheres = new ArrayList<Sphere>();
-		positions = new HashMap<Vector2, Float>();
-		uniquePos = new LinkedList<Vector2>();
-		
 		for(final Sphere elements : game_spheres) {
 			Sphere s = new Sphere(elements.color(), elements.gridPosition);
 			spheres.add(s);		
@@ -65,52 +43,72 @@ public class Simulator {
 		currSphere = new Sphere(curr_sphere.color(), curr_sphere.gridPosition);
 		resetSphere();
 	}
-
-//	private void initObjs(int round) {
-//		
-//		initCannon();
-//		
-//		loader = new RoundLoader();
-//		spheres = loader.loadRound(round);
-//		currSphere = new Sphere(this.loader.loadRoundColor(round));
-//		currSphere.setPosition((Game.GAME_WIDTH / 2) - (currSphere.getWidth() / 2) - 15
-//										, 80);
-//		nextSphere = new Sphere(this.ingameColor());
-//		nextSphere.setPosition((Game.GAME_WIDTH / 2) - (this.currSphere.getWidth() / 2) - 30 , 10);
-//		
-//		positions = new HashMap<Vector2, Float>();
-//		uniquePos = new LinkedList<Vector2>();
-//		
-//		System.out.println("Fine inizializzazione");
-//		
-//	}
 	
-	public float findStartingPositions() {
-		
-		findPossiblePositions();
-		
-		while(xcannon <= 470) {
-			if(currSphere.state() == Sphere.State.Stopped) {
-				currSphere.fixPosition(false);
-				positions.put(currSphere.gridPosition(),cannon.getTargetVector().x);
-				this.cannon.target(xcannon, ycannon);
-				xcannon += (DELTA + SettingsHelper.CANNON_X_SPEED);
-				
-				resetSphere();
-			}
-			
-			if(cannon.update(DELTA)) {
-				cannon.shoot(currSphere);
-			}
-			currSphere.update(spheres, DELTA);
-		}
-		removeDuplicate();
-		Vector2 sol = Solver.solve(spheres,positions,currSphere);
-		System.out.println(sol);
-		float cannonPos = positions.get(sol);
-		System.out.println("La pos del cannone è: " + cannonPos);
+	@SuppressWarnings("deprecation")
+	@Override
+	public void run() {
+		findStartingPositions();
+		stop();
+	}
 
-		return cannonPos;
+	@SuppressWarnings("static-access")
+	private void findStartingPositions() {
+		
+		HashMap<Float, Vector2> positions = new HashMap<Float, Vector2>();
+		LinkedList<Vector2> uniquePos = findPossiblePositions();
+//		while(xcannon <= 450) {
+//			if(currSphere.state() == Sphere.State.Stopped) {
+//				currSphere.fixPosition(false);
+//				positions.put(cannon.getTargetVector().x, currSphere.gridPosition());
+//				this.cannon.target(xcannon, ycannon);
+//				xcannon += 1.5f;
+//				
+//				resetSphere();
+//			}
+//			
+//			if(cannon.update(DELTA)) {
+//				cannon.shoot(currSphere);
+//			}
+//			currSphere.update(spheres, DELTA);
+//		}
+		
+		while(xcannon <= 420) {
+			cannon.target(xcannon, 480);
+			while(cannon.update(2.5f)) {} //attesa update cannone
+			cannon.shoot(currSphere);
+			while(true) {
+				currSphere.update(spheres, DELTA);
+				if(currSphere.state() == Sphere.State.Stopped) {
+					currSphere.fixPosition(false);
+					System.out.println(cannon.getTargetVector() +" // " + currSphere.gridPosition());
+					resetSphere();
+					positions.put(cannon.getTargetVector().x, currSphere.gridPosition());
+					break;
+				}
+			}
+			xcannon += 10.5f;
+		}
+		
+		
+		final HashMap<Vector2,Float> newPositions = removeDuplicate(positions,uniquePos);
+		for(final Iterator<Map.Entry<Vector2, Float>> it = newPositions.entrySet().iterator(); it.hasNext(); ) {
+			System.out.println(it.next());
+		}
+		final Vector2 sphereVec = Solver.solve(spheres,newPositions,currSphere);
+		float cannonPos = newPositions.get(sphereVec);
+		System.out.println("Posizioni: " + cannonPos + " // " + sphereVec);
+
+		StagePlay.stagePlay.setCannonTarget(cannonPos);
+		
+		try {
+			this.sleep(1000);
+			System.out.println("Fine sleep");
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		StagePlay.stagePlay.setPlayingSate();
 		
 	}
 	
@@ -129,29 +127,44 @@ public class Simulator {
 		currSphere.setState(Sphere.State.Ready);
 	}
 	
-	private void removeDuplicate() {
-		for(Iterator<Map.Entry<Vector2, Float>> it = positions.entrySet().iterator(); it.hasNext(); ) {
-		      Map.Entry<Vector2, Float> entry = it.next();
-		      boolean found = false;
-		      for(Vector2 v : uniquePos) {
-		    	  if(((Vector2)entry.getKey()).equals(v)) {
-		    		  found = true;
-		    		  break;
-		    	  }
-		      }
-		      if(!found) {
-		    	  it.remove();
-		      }
-		 }
-		for(Iterator<Map.Entry<Vector2, Float>> it = positions.entrySet().iterator(); it.hasNext(); ) {
-		      Map.Entry<Vector2, Float> entry = it.next();
-		     System.out.println(entry.getKey() +" "+entry.getValue());
-		 }
+	private final HashMap<Vector2,Float> removeDuplicate(HashMap<Float, Vector2> positions,final LinkedList<Vector2> uniquePos) {
+		
+		HashMap<Vector2,Float> newPos = new HashMap<Vector2, Float>();
+		
+//		System.out.println("elementi mappa prima rimozione: " + positions.size());
+//		for(Iterator<Map.Entry<Float,Vector2>> it = positions.entrySet().iterator(); it.hasNext(); ) {
+//		      System.out.println(it.next());
+//		}
+
+		for(final Vector2 toCheck : uniquePos) {
+			float min = 600f;
+			for(Iterator<Map.Entry<Float, Vector2>> it = positions.entrySet().iterator(); it.hasNext(); ) {
+			      Map.Entry<Float, Vector2> entry = it.next();
+			      if(toCheck.equals(entry.getValue())){
+			    	  float key = entry.getKey();
+			    	  if(key < min) {
+			    		  min = key;
+			    		  newPos.put(entry.getValue(), entry.getKey());
+			    	  }else {
+			    		  
+			    		  it.remove();
+			    	  }
+			      }
+			 }
+		}
+		
+//		System.out.println("dimensione della mappa dopo la rimoz: " + positions.size());
+//		for(Iterator<Map.Entry<Vector2, Float>> it = newPos.entrySet().iterator(); it.hasNext(); ) {
+//		      System.out.println(it.next());
+//		}
+
+		return newPos; 
 	}
 	
-	private void findPossiblePositions() {
+	private final LinkedList<Vector2> findPossiblePositions() {
+		LinkedList<Vector2> uniquePos = new LinkedList<Vector2>();
 		LinkedList<Vector2> possPositions = new LinkedList<Vector2>();
-		for (Sphere s : spheres) {
+		for (final Sphere s : spheres) {
 			checkNeighbors(s, possPositions);
 		}
 
@@ -164,17 +177,18 @@ public class Simulator {
 		}
 		
 		
-		for(Vector2 v : possPositions) {
+		for(final Vector2 v : possPositions) {
 			if(!uniquePos.contains(v)) {
 				uniquePos.add(v);
 			}
 		}
 		
-		System.out.println("Posizioni:");
-		for(Vector2 pos: uniquePos) {
-			System.out.println(pos);
-		}
+//		System.out.println("Posizioni vuote..");
+//		for(Vector2 pos: uniquePos) {
+//			System.out.println(pos);
+//		}
 		
+		return uniquePos;
 	}
 
 	private void checkNeighbors(Sphere s, LinkedList<Vector2> possPositions) {
@@ -229,17 +243,5 @@ public class Simulator {
 		return true;
 	}
 	
-	//ritorna un colore random tra i colori delle sfere presenti nel gioco
-	private Colors ingameColor() {
-		List<Colors> colors = new ArrayList<Colors>();
-		Iterator<Sphere> it = this.spheres.iterator();
-		while (it.hasNext()) {
-			Sphere s = it.next();
-			if (!colors.contains(s.color())) {
-				colors.add(s.color());
-			}
-		}
-		return colors.get(MathUtils.random(colors.size() - 1));
-	}
 
 }

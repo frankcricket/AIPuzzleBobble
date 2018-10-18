@@ -15,7 +15,7 @@ public class Cannon
 	private float rotateSpeed = 0.2F;
 	private float shootSpeed = 0.6F;
 	private float targetAngle = 0.0F;
-	private Vector2 targetVector = Vector2.Zero;
+	public Vector2 targetVector = Vector2.Zero;
 	private Sprite base;
 	private Sprite rotor;
 	private Sprite arrow;
@@ -40,22 +40,24 @@ public class Cannon
 	public boolean update(float delta)
 	{
 		float currentAngle = this.arrow.getRotation();
-		if (currentAngle != this.targetAngle)
+		if (currentAngle != targetAngle)
 		{
-//			System.out.println("....Aggiornamento cannone....");
+			System.out.println("cannon update " + currentAngle + " :angle: " + targetAngle);
 			if (Math.abs(this.targetAngle - currentAngle) < this.rotateSpeed * delta)
 			{
 				this.arrow.setRotation(this.targetAngle);
-				return false;
 			}
 			if (this.targetAngle > currentAngle)
 				{ rotateLeft(this.rotateSpeed * delta); }
 			else
 				{ rotateRight(this.rotateSpeed * delta); }
-			return false;
+			return true;
 		}
-		return true;
+		System.out.println("CANNON UPDATE END");
+		return false;
 	}
+	
+	
 	
 	public void setPosition(float x, float y)
 	{
@@ -69,7 +71,6 @@ public class Cannon
 
 	public void rotateRight(float degrees)
 	{
-//		System.out.println("Rotazione a dx del cannone");
 		float darrow = this.arrow.getRotation();
 		if (darrow < -84.0F) { return; }
 		float drotor = this.rotor.getRotation();
@@ -80,7 +81,6 @@ public class Cannon
 
 	public void rotateLeft(float degrees)
 	{
-//		System.out.println("Rotazione a sx del cannone");
 		float darrow = this.arrow.getRotation();
 		if (darrow > 84.0F) { return; }
 		float drotor = this.rotor.getRotation();
@@ -91,7 +91,6 @@ public class Cannon
 
 	public void target(float x, float y)
 	{
-//		System.out.println("Impostazione target del cannone");
 		this.targetVector.x = x;
 		this.targetVector.y = y;
 
@@ -105,17 +104,13 @@ public class Cannon
 	{
 		if (sphere.state() == Sphere.State.Ready)
 		{
-//			System.out.println("......Sparando la pallina.......");
 			InputHelper.play(this.shootingSound);
 			float offsety = MathHelper.offsetY(this.arrow.getRotation(), this.shootSpeed);
 			float offsetx = MathHelper.offsetX(this.arrow.getRotation(), this.shootSpeed);
 			sphere.setDirection(offsety, offsetx);
 			sphere.move();
 		}
-		else
-		{
-			InputHelper.play(this.hammeringSound);
-		}
+
 	}
 	
 	public final Vector2 getTargetVector() {

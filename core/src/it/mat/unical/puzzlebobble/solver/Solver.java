@@ -23,22 +23,22 @@ public class Solver {
 
 	public static Vector2 solve(final List<Sphere> spheres,final HashMap<Vector2, Float> positions,final Sphere currentSphere) {
 		
-//		for(final Iterator<Map.Entry<Vector2, Float>> it = positions.entrySet().iterator(); it.hasNext(); ) {
-//			int x,y;
-//			Map.Entry<Vector2, Float> entry = it.next();
-//		    x = (int) entry.getKey().x;
-//		    y = ((int) entry.getKey().y) * - 1; //asse y cambiata di segno perchè negativa
-//			System.out.println("position("+x+","+y+","+entry.getValue()+").");
-//		}
-//		System.out.println("Current spheres...");
+		for(final Iterator<Map.Entry<Vector2, Float>> it = positions.entrySet().iterator(); it.hasNext(); ) {
+			int x,y;
+			Map.Entry<Vector2, Float> entry = it.next();
+		    x = (int) entry.getKey().x;
+		    y = ((int) entry.getKey().y) * - 1; //asse y cambiata di segno perchè negativa
+			System.out.println("position("+x+","+y+","+entry.getValue()+").");
+		}
+		System.out.println("Current spheres...");
 		
-//		for (final Sphere s : spheres) {
-//			int x,y,col;
-//			x = (int) s.gridPosition().x;
-//			y = ((int) s.gridPosition().y) * - 1; //asse y cambiata di segno perchè negativa
-//			col = s.getColorId();
-//			System.out.println("sphere("+x+","+y+","+col+").");
-//		}
+		for (final Sphere s : spheres) {
+			int x,y,col;
+			x = (int) s.gridPosition().x;
+			y = ((int) s.gridPosition().y) * - 1; //asse y cambiata di segno perchè negativa
+			col = s.getColorId();
+			System.out.println("sphere("+x+","+y+","+col+").");
+		}
 		
 		Handler handler = new DesktopHandler(new DLVDesktopService("lib/dlv.mingw.exe"));
 		InputProgram facts = new ASPInputProgram();	

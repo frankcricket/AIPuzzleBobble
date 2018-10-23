@@ -38,7 +38,6 @@ public class StagePlay implements Stage {
 
 	private enum State {
 		Prestart,
-		Simulation,
 		Waiting,
 		Beginning,
 		Playing,
@@ -117,13 +116,12 @@ public class StagePlay implements Stage {
 		this.counter += delta / 1000;
 		if (this.counter > 3.0f) {
 //			this.state = State.Playing;
-			this.state = State.Simulation;
 			
 		}
 	}
 	
 	private void playing(float delta) {
-		System.out.println("playing");
+//		System.out.println("playing");
 		
 		if (this.currentSphere.state() == Sphere.State.Stopped) {
 			System.out.println("-------------------STOPPED-------------------------");
@@ -175,7 +173,7 @@ public class StagePlay implements Stage {
 			return;
 		}
 		if(currentSphere.state() == Sphere.State.Ready)	{
-			System.out.println("READY");
+//			System.out.println("READY");
 			if(!cannon.update(10)) {
 				cannon.shoot(currentSphere);
 			}
@@ -331,7 +329,7 @@ public class StagePlay implements Stage {
 			this.nextRound();
 			this.score.setRound(this.round);
 			this.score.resetTime();
-			this.state = State.Simulation;
+			this.state = State.Prestart;
 		} else {
 			// end game state
 			if (this.round >= MAX_ROUNDS) {

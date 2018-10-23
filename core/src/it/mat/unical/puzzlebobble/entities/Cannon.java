@@ -12,7 +12,7 @@ import it.mat.unical.puzzlebobble.helpers.MathHelper;
 
 public class Cannon
 {
-	private float rotateSpeed = 0.2F;
+	private float rotateSpeed = 0.1F;
 	private float shootSpeed = 0.6F;
 	private float targetAngle = 0.0F;
 	public Vector2 targetVector = Vector2.Zero;
@@ -39,21 +39,22 @@ public class Cannon
 
 	public boolean update(float delta)
 	{
-		float currentAngle = this.arrow.getRotation();
+		float currentAngle = arrow.getRotation();
 		if (currentAngle != targetAngle)
 		{
-			System.out.println("cannon update " + currentAngle + " :angle: " + targetAngle);
-			if (Math.abs(this.targetAngle - currentAngle) < this.rotateSpeed * delta)
+//			System.out.println("cannon update " + currentAngle + " :angle: " + targetAngle);
+			if (Math.abs(targetAngle - currentAngle) < rotateSpeed * delta)
 			{
-				this.arrow.setRotation(this.targetAngle);
+				arrow.setRotation(targetAngle);
 			}
-			if (this.targetAngle > currentAngle)
-				{ rotateLeft(this.rotateSpeed * delta); }
-			else
-				{ rotateRight(this.rotateSpeed * delta); }
+			if (this.targetAngle > currentAngle) {
+				rotateLeft(rotateSpeed * delta); 
+			} else {
+				rotateRight(rotateSpeed * delta); 
+			}
 			return true;
 		}
-		System.out.println("CANNON UPDATE END");
+//		System.out.println("CANNON UPDATE END");
 		return false;
 	}
 	
@@ -61,19 +62,19 @@ public class Cannon
 	
 	public void setPosition(float x, float y)
 	{
-		float x2 = x - 15 - this.rotor.getWidth() / 2.0F;
-		float x3 = x - 15 - this.arrow.getWidth() / 2.0F;
-		float x4 = x + 25 - this.base.getWidth() / 2.0F;
-		this.rotor.setPosition(x2, y + 12);
-		this.arrow.setPosition(x3, y + 50f);
-		this.base.setPosition(x4, y);
+		float x2 = x - 15 - rotor.getWidth() / 2.0F;
+		float x3 = x - 15 - arrow.getWidth() / 2.0F;
+		float x4 = x + 25 - base.getWidth() / 2.0F;
+		rotor.setPosition(x2, y + 12);
+		arrow.setPosition(x3, y + 50f);
+		base.setPosition(x4, y);
 	}
 
 	public void rotateRight(float degrees)
 	{
-		float darrow = this.arrow.getRotation();
+		float darrow = arrow.getRotation();
 		if (darrow < -84.0F) { return; }
-		float drotor = this.rotor.getRotation();
+		float drotor = rotor.getRotation();
 
 		this.rotor.setRotation(drotor - degrees * 3.0F);
 		this.arrow.setRotation(darrow - degrees);

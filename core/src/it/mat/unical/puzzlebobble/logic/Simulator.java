@@ -80,7 +80,7 @@ public class Simulator extends Thread{
 				currSphere.update(spheres, DELTA);
 				if(currSphere.state() == Sphere.State.Stopped) {
 					currSphere.fixPosition(false);
-					System.out.println(cannon.getTargetVector() +" // " + currSphere.gridPosition());
+//					System.out.println(cannon.getTargetVector() +" // " + currSphere.gridPosition());
 					resetSphere();
 					positions.put(cannon.getTargetVector().x, currSphere.gridPosition());
 					break;
@@ -102,7 +102,6 @@ public class Simulator extends Thread{
 		
 		try {
 			this.sleep(1000);
-			System.out.println("Fine sleep");
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

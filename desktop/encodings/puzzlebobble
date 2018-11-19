@@ -1,28 +1,89 @@
-%GENERO LO SPAZIO DI RICERCA
-
 odd(1).odd(3).odd(5).odd(7).odd(9).odd(11).
 even(0).even(2).even(4).even(6).even(8).even(10).even(12).
 
 
-%Adiacenze con Y dispari
+%-->Generazione dei vicini, date le posizioni iniziali (con colonna dispari)
 neighbors(X,Y,Col) :- position(X,Y,_),odd(Y), sphere(Z,W,Col), Z=X, W=Y-1.   %top right
 neighbors(X,Y,Col) :- position(X,Y,_),odd(Y), sphere(Z,W,Col), Z=X-1, W=Y-1. %top left
 neighbors(X,Y,Col) :- position(X,Y,_),odd(Y), sphere(Z,W,Col), Z=X-1, W=Y.   %left
 neighbors(X,Y,Col) :- position(X,Y,_),odd(Y), sphere(Z,W,Col), Z=X+1, W=Y.   %right
 
-%Adiacenze con Y pari
+%-->Generazione dei vicini, date le posizioni iniziali (con colonna pari)
 neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X+1, W=Y-1.   %top right
 neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X, W=Y-1. %top left
 neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X-1, W=Y.   %left
 neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X+1, W=Y.   %right
 
-%Spazio di ricerca
+neighbors(X,Y,Col) :- position(X,Y,_), Y = 0,currentsphere(Col).
+
+%-->Generazione spazio di ricerca
 inGrid(X,Y,Col) | outGrid(X,Y,Col) :- neighbors(X,Y,Col).
 
-inGrid(X,Y,Col) :- neighbors(X,Y,Col), currentsphere(Col).
+%-->Non è possibile che non ci sia esattamente una soluzione
+:- not #count{X,Y: inGrid(X,Y,_)} = 1.
 
-:- #count{X,Y: inGrid(X,Y,_)} = 0.
+%-->Non è possibile che ci sia un colore diverso da quello corrente
+:- inGrid(_,_,Col), not currentsphere(Col).
 
-:~ inGrid(X,Y,Col), not currentsphere(Col),Z = Y+1. [1:Z]
+%-->Generazione gruppo di sfere con gli stessi colori
+sameColorNeighbors(X,Y,X,Y,Col) :- neighbors(X,Y,Col), currentsphere(Col).
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),odd(W), I=Z, J=W-1. %top right
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),odd(W), I=Z-1, J=W-1. %top left
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),odd(W), I=Z-1, J=W. %left
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),odd(W), I=Z+1, J=W. %right
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),odd(W), I=Z, J=W+1. %bottom right
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),odd(W), I=Z-1, J=W+1. %bottom left
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),even(W), I=Z+1, J=W-1. %top right
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),even(W), I=Z, J=W-1. %top left
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),even(W), I=Z-1, J=W. %left
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),even(W), I=Z+1, J=W. %right
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),even(W), I=Z+1, J=W+1. %bottom right
+sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,Col),even(W), I=Z, J=W+1. %bottom left
 
+%-->Calcolo del numero di sfere adiacenti con lo stesso colore
+nSpheresSC(X,Y,Total) :- neighbors(X,Y,Col), Num = #count{W,Z : sameColorNeighbors(X,Y,W,Z,Col)}, Total = Num-1.
+
+%-->Generazione delle sfere del gioco, escludendo il gruppo con gli adiacenti dello stesso colore
+newSphere(PosX,PosY,X,Y,Col) :- sphere(X,Y,Col), neighbors(PosX,PosY,_),not sameColorNeighbors(PosX,PosY,X,Y,Col).
+spherePath(PosX,PosY,X,Y,X,Y) :- newSphere(PosX,PosY,X,Y,_).
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),odd(W), I=Z, J=W-1. %top right
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),odd(W), I=Z-1, J=W-1. %top left
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),odd(W), I=Z-1, J=W. %left
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),odd(W), I=Z+1, J=W. %right
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),odd(W), I=Z, J=W+1. %bottom right
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),odd(W), I=Z-1, J=W+1. %bottom left
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),even(W), I=Z+1, J=W-1. %top right
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),even(W), I=Z, J=W-1. %top left
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),even(W), I=Z-1, J=W. %left
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),even(W), I=Z+1, J=W. %right
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),even(W), I=Z+1, J=W+1. %bottom right
+spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),even(W), I=Z, J=W+1. %bottom left
+
+%-->Generazione delle sfere che hanno un collegamento diretto o indiretto alla radice (con indice di colonna posto = 0)
+sphereOnTop(PosX,PosY,X,Y) :- neighbors(PosX,PosY,_), spherePath(PosX,PosY,X,Y,_,0).
+
+%-->Una sfera cade se non ha un collegamento con la radice
+falls(PosX,PosY,X,Y) :- newSphere(PosX,PosY,X,Y,_),not sphereOnTop(PosX,PosY,X,Y). 
+
+%-->Calcolo del numero di sfere che cadono
+nFalls(PosX,PosY,N) :- neighbors(PosX,PosY,_), N = #count{X,Y : falls(PosX,PosY,X,Y)}.
+
+%-->Calcolo del numero di sfere totali
+nTotal(N) :- N = #count{A,B: sphere(A,B,_)}.
+
+%-->Calcolo del numero di sfere rimanenti ( Numero di sfere totali - numero del gruppo di sfere con lo stesso colore)
+nSphereNoAdj(PosX,PosY, N) :- neighbors(PosX,PosY,_), nSpheresSC(PosX,PosY,NumSC), nTotal(T), N = T - NumSC.
+
+%-->Calcolo del numero di sfere non rotte
+unBrokenSpheres(PosX,PosY,N) :- neighbors(PosX,PosY,_), nSphereNoAdj(PosX,PosY,T), nFalls(PosX,PosY,Fall), N = T-Fall.                     
+
+
+
+%-->Massimizzazione numero di sfere rotte.
+:~ inGrid(X,Y,_), unBrokenSpheres(X,Y,Weight). [Weight:20]
+:~ inGrid(X,Y,_), Row = Y + 1. [Row:19]
+
+
+
+#maxint=1000000.
 

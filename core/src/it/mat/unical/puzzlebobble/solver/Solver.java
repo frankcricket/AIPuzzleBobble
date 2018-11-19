@@ -40,6 +40,8 @@ public class Solver {
 			System.out.println("sphere("+x+","+y+","+col+").");
 		}
 		
+		System.out.println("Current sphere: " + currentSphere.getColorId());
+		
 		Handler handler = new DesktopHandler(new DLVDesktopService("lib/dlv.mingw.exe"));
 		InputProgram facts = new ASPInputProgram();	
 		

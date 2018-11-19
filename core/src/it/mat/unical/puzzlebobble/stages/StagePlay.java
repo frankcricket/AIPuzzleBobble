@@ -121,10 +121,7 @@ public class StagePlay implements Stage {
 	}
 	
 	private void playing(float delta) {
-//		System.out.println("playing");
-		
 		if (this.currentSphere.state() == Sphere.State.Stopped) {
-			System.out.println("-------------------STOPPED-------------------------");
 			boolean brokeFlag = false;
 			this.currentSphere.fixPosition(false);
 			List<Sphere> similars = this.currentSphere.findSimilars(this.spheres);
@@ -173,8 +170,8 @@ public class StagePlay implements Stage {
 			return;
 		}
 		if(currentSphere.state() == Sphere.State.Ready)	{
-//			System.out.println("READY");
-			if(!cannon.update(10)) {
+			if(!cannon.update(delta)) {
+				System.out.println(cannon.getTargetVector());
 				cannon.shoot(currentSphere);
 			}
 		}

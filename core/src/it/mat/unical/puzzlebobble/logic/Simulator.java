@@ -200,7 +200,7 @@ public class Simulator extends Thread {
 			else {
 				value = points.get(i);
 			}
-			posMap.put(currentPos, value + 0.75f);
+			posMap.put(currentPos, value + 0.95f);
 		}
 
 		return posMap;

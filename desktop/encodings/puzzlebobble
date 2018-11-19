@@ -17,13 +17,13 @@ neighbors(X,Y,Col) :- position(X,Y,_),even(Y), sphere(Z,W,Col), Z=X+1, W=Y.   %r
 neighbors(X,Y,Col) :- position(X,Y,_), Y = 0,currentsphere(Col).
 
 %-->Generazione spazio di ricerca
-inGrid(X,Y,Col) | outGrid(X,Y,Col) :- neighbors(X,Y,Col).
+inGrid(X,Y,CurrCol,Ncol) | outGrid(X,Y,CurrCol,Ncol) :- neighbors(X,Y,Ncol),currentsphere(CurrCol).
 
 %-->Non è possibile che non ci sia esattamente una soluzione
-:- not #count{X,Y: inGrid(X,Y,_)} = 1.
+:- not #count{X,Y: inGrid(X,Y,_,_)} = 1.
 
 %-->Non è possibile che ci sia un colore diverso da quello corrente
-:- inGrid(_,_,Col), not currentsphere(Col).
+%:- inGrid(_,_,Col), not currentsphere(Col).
 
 %-->Generazione gruppo di sfere con gli stessi colori
 sameColorNeighbors(X,Y,X,Y,Col) :- neighbors(X,Y,Col), currentsphere(Col).
@@ -80,10 +80,17 @@ unBrokenSpheres(PosX,PosY,N) :- neighbors(PosX,PosY,_), nSphereNoAdj(PosX,PosY,T
 
 
 %-->Massimizzazione numero di sfere rotte.
-:~ inGrid(X,Y,_), unBrokenSpheres(X,Y,Weight). [Weight:20]
-:~ inGrid(X,Y,_), Row = Y + 1. [Row:19]
+:~ inGrid(_,_,Col1,Col2),Col1 <> Col2. [1:21]
+:~ inGrid(X,Y,Col,Col), unBrokenSpheres(X,Y,Weight). [Weight:20]
+:~ inGrid(X,Y,Col1,_), not neighbors(X,Y,Col1), Row = Y+1. [Row:19]
+
+:~ inGrid(X,Y,_,_), Row = Y + 1. [Row:18]
 
 
 
 #maxint=1000000.
+
+
+
+
 

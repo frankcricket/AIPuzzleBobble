@@ -17,7 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Sphere extends Sprite {
-	public static int Size = 50;
+	public static int Size = 50; //dimensione della sprite
 
 	public static enum Colors {
 		Red, Yellow, Blue, Green, White;
@@ -110,7 +110,6 @@ public class Sphere extends Sprite {
 	}
 
 	public void update(List<Sphere> spheres, float delta) {
-//		float newDelta = delta + SettingsHelper.SPHERE_SPEED ;//* 
 		if (this.state == State.Moving) {
 			checkCollision(spheres);
 			if (getY() >= StagePlay.TOP_BORDER) {
@@ -158,8 +157,11 @@ public class Sphere extends Sprite {
 		float positionX = getX() + getWidth() / 2.0F;
 		float positionY = getY() + getHeight() / 2.0F - 45.0F;
 
-		int gy = (int) (positionY - StagePlay.TOP_BORDER - Size / 2) / Size;
+		int gy = (int) ((positionY - StagePlay.TOP_BORDER - Size / 2) / Size);
 		int gx = (int) ((positionX - StagePlay.LEFT_BORDER - gy % 2 * (Size / 2)) / Size);
+//		float f=((positionY - StagePlay.TOP_BORDER - Size / 2) / Size);
+//		int gy = Math.round(f);
+//		int gx = Math.round((positionX - StagePlay.LEFT_BORDER - f % 2 * (Size / 2)) / Size);
 
 		if (gx < 0) {
 			gx = 0;

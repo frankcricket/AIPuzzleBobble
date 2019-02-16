@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -14,7 +13,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 
 import it.mat.unical.puzzlebobble.Game;
-import it.mat.unical.puzzlebobble.Preferences;
 import it.mat.unical.puzzlebobble.RoundLoader;
 import it.mat.unical.puzzlebobble.Score;
 import it.mat.unical.puzzlebobble.entities.Cannon;
@@ -64,15 +62,11 @@ public class StagePlay implements Stage {
 	private Sphere currentSphere;
 	private Sphere nextSphere;
 	private Score score;
-	private Sound boo;
-	private float counter = 0.0f;
-	
 	
 	@Override
 	public void load() {
 		this.font = new BitmapFont();
 		font.getData().setScale(5f);
-		this.boo = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/boo.ogg"));
 		this.background = new Sprite(new Texture("assets/images/new/playscreen1.png"));
 		this.deadend = new Sprite(new Texture("assets/images/new/deadend.png"));
 		this.deadend.setPosition(LEFT_BORDER - 5, DEADEND);
@@ -105,37 +99,25 @@ public class StagePlay implements Stage {
 	@Override
 	public void dispose() {
 		Sphere.destroySound.dispose();
-		this.boo.dispose();
 		this.cannon.dispose();
 	}
 
-	/*
-	 * TODO tempo di attesa
-	 */
-	private void beginning(float delta) {
-		this.counter += delta / 1000;
-		if (this.counter > 3.0f) {
-//			this.state = State.Playing;
-			
-		}
-	}
-	
 	private void playing(float delta) {
 		if (this.currentSphere.state() == Sphere.State.Stopped) {
 			boolean brokeFlag = false;
-			this.currentSphere.fixPosition(false);
-			List<Sphere> similars = this.currentSphere.findSimilars(this.spheres);
-			this.spheres.add(this.currentSphere);
+			currentSphere.fixPosition(false);
+			List<Sphere> similars = currentSphere.findSimilars(spheres);
+			spheres.add(currentSphere);
 			if (similars.size() > 2) {
 				brokeFlag = true;
 				InputHelper.play(Sphere.destroySound);
-				this.score.addPoints(similars.size() * POINTS_PER_SPHERE);
-				this.smokeOnDestroyedSpheres(similars);
+				score.addPoints(similars.size() * POINTS_PER_SPHERE);
+				smokeOnDestroyedSpheres(similars);
 				
-				this.spheres.removeAll(similars);
+				spheres.removeAll(similars);
 				// Delete floating ones
 				List<Sphere> floatingSpheres = new ArrayList<Sphere>();
-				Iterator<Sphere> it = this.spheres.iterator();
+				Iterator<Sphere> it = spheres.iterator();
 				while (it.hasNext()) {
 					Sphere sphere = it.next();
 					if (sphere.floating(spheres)) {
@@ -159,7 +141,6 @@ public class StagePlay implements Stage {
 			/*Controllo "hai perso"*/
 			if (brokeFlag == false) {
 				if (this.currentSphere.gridPosition().y <= MAX_SPHERES) {
-					InputHelper.play(this.boo);
 					this.state = State.Lost;
 					return;
 				}
@@ -168,14 +149,14 @@ public class StagePlay implements Stage {
 			
 			state = State.Waiting;
 			return;
-		}
+		}// if(State.Stopped)
+		
 		if(currentSphere.state() == Sphere.State.Ready)	{
 			if(!cannon.update(delta)) {
-				System.out.println(cannon.getTargetVector());
 				cannon.shoot(currentSphere);
 			}
 		}
-		currentSphere.update(spheres, delta);
+		currentSphere.update(spheres, delta *= 0.955);
 	}
 
 	@Override
@@ -198,7 +179,7 @@ public class StagePlay implements Stage {
 		}
 		case Prestart:{
 			if(InputHelper.readyToPlay()) {
-				new Simulator(spheres,currentSphere).start();
+				new Simulator(spheres,currentSphere,nextSphere).start();
 				state = State.Beginning;
 			}
 			break;
@@ -216,7 +197,7 @@ public class StagePlay implements Stage {
 			break;
 		}
 		case Waiting:{
-			new Simulator(spheres,currentSphere).start();
+			new Simulator(spheres,currentSphere,nextSphere).start();
 			state = State.Beginning;
 			break;
 		}
@@ -243,9 +224,6 @@ public class StagePlay implements Stage {
 		if (this.currentSphere != null) {
 			this.currentSphere.draw(spriteBatch);
 		}
-//		if (this.currentSimSphere != null) {
-//			this.currentSimSphere.draw(spriteBatch);
-//		}
 		if (this.nextSphere != null) {
 			this.nextSphere.draw(spriteBatch);
 		}
@@ -335,12 +313,7 @@ public class StagePlay implements Stage {
 				}
 			}
 			if (this.round > MAX_ROUNDS + 1) {
-				if (InputHelper.justTouched()) {
-					if (this.score.points() > Preferences.maxScore()) {
-						Preferences.maxScore(this.score.points());
-					}
-					Game.getGameInstance().changeStage(new StageMainMenu());
-				}
+				Game.getGameInstance().changeStage(new StageMainMenu());
 			}
 		}
 

@@ -3,12 +3,7 @@ package it.mat.unical.puzzlebobble.logic;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.badlogic.gdx.math.Vector2;
 
 import it.mat.unical.puzzlebobble.Game;
@@ -23,18 +18,20 @@ public class Simulator extends Thread {
 	private Cannon cannon;
 	private float xcannon, ycannon;
 	private Sphere currSphere;
+	private Sphere nextSphere;
 	private List<Sphere> spheres;
 
 	private final static float DELTA = 5f;
 
-	public Simulator(final List<Sphere> game_spheres, final Sphere curr_sphere) {
+	public Simulator(final List<Sphere> game_spheres, final Sphere curr_sphere, final Sphere next_sphere) {
 		cannon = null;
 		currSphere = null;
+		nextSphere = null;
 		spheres = null;
-		initObjs(game_spheres, curr_sphere);
+		initObjs(game_spheres, curr_sphere,next_sphere);
 	}
 
-	private void initObjs(final List<Sphere> game_spheres, final Sphere curr_sphere) {
+	private void initObjs(final List<Sphere> game_spheres, final Sphere curr_sphere, final Sphere next_sphere) {
 
 		initCannon();
 		spheres = new ArrayList<Sphere>();
@@ -43,6 +40,7 @@ public class Simulator extends Thread {
 			spheres.add(s);
 		}
 		currSphere = new Sphere(curr_sphere.color(), curr_sphere.gridPosition);
+		nextSphere = new Sphere(next_sphere.color(), next_sphere.gridPosition);
 		resetSphere();
 	}
 
@@ -73,23 +71,16 @@ public class Simulator extends Thread {
 					break;
 				}
 			}
-			xcannon += 1.5f;
+			xcannon += .5f;
 		}
-
-//		for (int i = 0; i < pos.size(); i++) {
-//			System.out.println(pos.get(i) + " " + points.get(i));
-//		}
 
 		final HashMap<Vector2, Float> newPositions = getOrderedValues(pos, points);
-		for (final Iterator<Map.Entry<Vector2, Float>> it = newPositions.entrySet().iterator(); it.hasNext();) {
-			System.out.println(it.next());
-		}
 
-		final Vector2 sphereVec = Solver.solve(spheres, newPositions, currSphere);
+		final Vector2 sphereVec = Solver.solve(spheres, newPositions, currSphere,nextSphere);
 		float cannonPos = newPositions.get(sphereVec);
 		System.out.println("Posizioni: " + cannonPos + " // " + sphereVec);
 
-		StagePlay.stagePlay.setCannonTarget(cannonPos - 1f);
+		StagePlay.stagePlay.setCannonTarget(cannonPos);
 
 		try {
 			this.sleep(1000);
@@ -115,66 +106,6 @@ public class Simulator extends Thread {
 		currSphere.setState(Sphere.State.Ready);
 	}
 
-//	private final HashMap<Vector2,Float> removeDuplicate(HashMap<Float, Vector2> positions,final LinkedList<Vector2> uniquePos) {
-//		
-//		HashMap<Vector2,Float> newPos = new HashMap<Vector2, Float>();
-//		
-//		System.out.println("elementi mappa prima rimozione: " + positions.size());
-//		for(Iterator<Map.Entry<Float,Vector2>> it = positions.entrySet().iterator(); it.hasNext(); ) {
-//		      System.out.println(it.next());
-//		}
-//
-//		for(final Vector2 toCheck : uniquePos) {
-//			float min = 600f;
-//			for(Iterator<Map.Entry<Float, Vector2>> it = positions.entrySet().iterator(); it.hasNext(); ) {
-//			      Map.Entry<Float, Vector2> entry = it.next();
-//			      if(toCheck.equals(entry.getValue())){
-//			    	  float key = entry.getKey();
-//			    	  if(key < min) {
-//			    		  min = key;
-//			    		  newPos.put(entry.getValue(), entry.getKey());
-//			    	  }else {
-//			    		  
-//			    		  it.remove();
-//			    	  }
-//			      }
-//			 }
-//		}
-//		
-////		System.out.println("dimensione della mappa dopo la rimoz: " + positions.size());
-////		for(Iterator<Map.Entry<Vector2, Float>> it = newPos.entrySet().iterator(); it.hasNext(); ) {
-////		      System.out.println(it.next());
-////		}
-//
-//		return newPos; 
-//	}
-
-//	private final HashMap<Vector2,Float> getOrderedValues(ArrayList<Vector2> positions, ArrayList<Float> points){
-//		
-//		HashMap<Vector2, Float> posMap = new HashMap<Vector2, Float>();
-//		float value = 600f;
-//
-//		for(int i = 0; i < positions.size(); i++) {
-//			Vector2 currentPos = positions.get(i);
-//			if(posMap.containsKey(currentPos))
-//				continue;
-//			int count = 1;
-//			value = points.get(i);
-//			for(int j = i+1; j < positions.size(); j++) {
-//				if(currentPos.equals(positions.get(j))) {
-//					if(count <= 4) {
-//						value += points.get(j);
-//						count ++;
-//					}
-//					else break;
-//				}
-//			}
-//			posMap.put(currentPos, value/count);
-//		}
-//		
-//		
-//		return posMap;
-//	}
 
 	private final HashMap<Vector2, Float> getOrderedValues(ArrayList<Vector2> positions, ArrayList<Float> points) {
 
@@ -184,6 +115,7 @@ public class Simulator extends Thread {
 			if (posMap.containsKey(currentPos))
 				continue;
 			ArrayList<Float> currVal = new ArrayList<Float>();
+			currVal.add(points.get(i));
 			for(int j = i+1; j < positions.size(); j++) {
 				if(currentPos.equals(positions.get(j))) {
 					currVal.add(points.get(j));
@@ -192,100 +124,36 @@ public class Simulator extends Thread {
 			
 			int pos = 0;
 			float value = 0f;
-			if(currVal.size() > 0) {
+			int size = currVal.size();
+			if(size > 0) {
 				Collections.sort(currVal);
-				pos = currVal.size()/2;
-				value = currVal.get(pos);
+				if(size > 3 && (currVal.get(0) > 190 || Math.abs(currVal.get(0) - currVal.get(1)) > 25)) {
+					value = currVal.get(3) + 0.5f;
+				}
+				else {
+					pos = size/2;
+					value = currVal.get(pos);
+				}
+				
+				if(size == 1){
+					continue;
+				}
 			}
-			else {
-				value = points.get(i);
-			}
-			posMap.put(currentPos, value + 0.95f);
+			
+//			System.out.println("Values.....  " + currentPos);
+//			for(int k = 0 ; k < size; k++) {
+//				System.out.println(currVal.get(k));
+//			}
+			
+//			float spread = 0.555f;
+//			value = (value < 200) ? (value + spread) : (value - spread);
+//			if(value > 300) 
+//				value -= spread;
+			posMap.put(currentPos, value );
 		}
 
 		return posMap;
 	}
 
-//	private final LinkedList<Vector2> findPossiblePositions() {
-//		LinkedList<Vector2> uniquePos = new LinkedList<Vector2>();
-//		LinkedList<Vector2> possPositions = new LinkedList<Vector2>();
-//		for (final Sphere s : spheres) {
-//			checkNeighbors(s, possPositions);
-//		}
-//
-//		Iterator<Vector2> it = possPositions.iterator();
-//		while(it.hasNext()) {
-//			Vector2 curr = it.next();
-//			if(curr.x >= 8 || curr.x <= -1 || curr.y >= 1) {
-//				it.remove();
-//			}
-//		}
-//		
-//		
-//		for(final Vector2 v : possPositions) {
-//			if(!uniquePos.contains(v)) {
-//				uniquePos.add(v);
-//			}
-//		}
-//		
-////		System.out.println("Posizioni vuote..");
-////		for(Vector2 pos: uniquePos) {
-////			System.out.println(pos);
-////		}
-//		
-//		return uniquePos;
-//	}
-
-	private void checkNeighbors(Sphere s, LinkedList<Vector2> possPositions) {
-		Vector2 position = s.gridPosition();
-		List<Sphere> neighbors = s.findNeighbors(spheres);
-
-		Vector2 tmp = new Vector2(0.0F, 0.0F);
-
-		tmp.x = (position.x - Math.abs(position.y) % 2.0F); // top-left
-		tmp.y = (position.y + 1.0F);
-		if (notCollide(tmp, neighbors)) {
-			possPositions.add(new Vector2(tmp));
-		}
-
-		tmp.x = (position.x - Math.abs(position.y) % 2.0F + 1.0F); // top-right
-		tmp.y = (position.y + 1.0F);
-		if (notCollide(tmp, neighbors)) {
-			possPositions.add(new Vector2(tmp));
-		}
-
-		tmp.x = (position.x - 1.0F); // left
-		tmp.y = position.y;
-		if (notCollide(tmp, neighbors)) {
-			possPositions.add(new Vector2(tmp));
-		}
-
-		tmp.x = (position.x + 1.0F); // right
-		tmp.y = position.y;
-		if (notCollide(tmp, neighbors)) {
-			possPositions.add(new Vector2(tmp));
-		}
-
-		tmp.x = (position.x - Math.abs(position.y) % 2.0F); // bottom-left
-		tmp.y = (position.y - 1.0F);
-		if (notCollide(tmp, neighbors)) {
-			possPositions.add(new Vector2(tmp));
-		}
-
-		tmp.x = (position.x - Math.abs(position.y) % 2.0F + 1.0F); // bottom-right
-		tmp.y = (position.y - 1.0F);
-		if (notCollide(tmp, neighbors)) {
-			possPositions.add(new Vector2(tmp));
-		}
-
-	}
-
-	private boolean notCollide(Vector2 v, List<Sphere> neighbors) {
-		for (Sphere list : neighbors) {
-			if (list.gridPosition.equals(v))
-				return false;
-		}
-		return true;
-	}
 
 }

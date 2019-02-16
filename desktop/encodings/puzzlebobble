@@ -22,8 +22,6 @@ inGrid(X,Y,CurrCol,Ncol) | outGrid(X,Y,CurrCol,Ncol) :- neighbors(X,Y,Ncol),curr
 %-->Non è possibile che non ci sia esattamente una soluzione
 :- not #count{X,Y: inGrid(X,Y,_,_)} = 1.
 
-%-->Non è possibile che ci sia un colore diverso da quello corrente
-%:- inGrid(_,_,Col), not currentsphere(Col).
 
 %-->Generazione gruppo di sfere con gli stessi colori
 sameColorNeighbors(X,Y,X,Y,Col) :- neighbors(X,Y,Col), currentsphere(Col).
@@ -44,7 +42,7 @@ sameColorNeighbors(X,Y,I,J,Col) :- sameColorNeighbors(X,Y,Z,W,Col), sphere(I,J,C
 nSpheresSC(X,Y,Total) :- neighbors(X,Y,Col), Num = #count{W,Z : sameColorNeighbors(X,Y,W,Z,Col)}, Total = Num-1.
 
 %-->Generazione delle sfere del gioco, escludendo il gruppo con gli adiacenti dello stesso colore
-newSphere(PosX,PosY,X,Y,Col) :- sphere(X,Y,Col), neighbors(PosX,PosY,_),not sameColorNeighbors(PosX,PosY,X,Y,Col).
+newSphere(PosX,PosY,X,Y,Col) :- sphere(X,Y,Col), neighbors(PosX,PosY,_),not sameColorNeighbors(PosX,PosY,X,Y,Col), nSpheresSC(PosX,PosY,Total), Total > 1.
 spherePath(PosX,PosY,X,Y,X,Y) :- newSphere(PosX,PosY,X,Y,_).
 spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),odd(W), I=Z, J=W-1. %top right
 spherePath(PosX,PosY,X,Y,I,J) :- spherePath(PosX,PosY,X,Y,Z,W), newSphere(PosX,PosY,I,J,Col),odd(W), I=Z-1, J=W-1. %top left
@@ -79,16 +77,22 @@ unBrokenSpheres(PosX,PosY,N) :- neighbors(PosX,PosY,_), nSphereNoAdj(PosX,PosY,T
 
 
 
-%-->Massimizzazione numero di sfere rotte.
-:~ inGrid(_,_,Col1,Col2),Col1 <> Col2. [1:21]
-:~ inGrid(X,Y,Col,Col), unBrokenSpheres(X,Y,Weight). [Weight:20]
-:~ inGrid(X,Y,Col1,_), not neighbors(X,Y,Col1), Row = Y+1. [Row:19]
+%-->E' preferibile lanciare la sfera vicino un'altra dello stesso colore
+:~ inGrid(_,_,Col1,Col2),Col1 <> Col2. [1:4]
 
-:~ inGrid(X,Y,_,_), Row = Y + 1. [Row:18]
+%-->Massimizzazione delle sfere rotte
+:~ inGrid(X,Y,Col,Col), unBrokenSpheres(X,Y,Weight). [Weight:3]
+
+%-->Se la sfera corrente non ha adiacenti dello steso colore, viene massimizzata l'altezza
+:~ inGrid(X,Y,Col1,_), not neighbors(X,Y,Col1), Row = Y+1. [Row:2]
+
+:~ inGrid(X,Y,_,_), Row = Y + 1. [Row:1]
 
 
 
 #maxint=1000000.
+
+
 
 
 
